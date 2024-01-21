@@ -685,22 +685,24 @@ impl Ini {
                             out.push_str(delimiter);
                         }
 
-                        if is_multiline(value) {
-                            let mut lines = value.lines();
-
-                            out.push_str(lines.next().unwrap_or_default());
-
-                            for line in lines {
-                                out.push_str(LINE_ENDING);
-                                out.push_str(" ".repeat(indent).as_ref());
-                                out.push_str(line);
-                            }
-                        } else {
-                            out.push_str(value);
-                        }
+                        // if is_multiline(value) {
+                        //     let mut lines = value.lines();
+                        //
+                        //     out.push_str(lines.next().unwrap_or_default());
+                        //
+                        //     for line in lines {
+                        //         out.push_str(LINE_ENDING);
+                        //         out.push_str(" ".repeat(indent).as_ref());
+                        //         out.push_str(line);
+                        //     }
+                        // } else {
+                        //     out.push_str(value);
                         // }
+                        // }
+                        out.push_str(value);
+                        out.push_str(LINE_ENDING);
                     }
-                    out.push_str(LINE_ENDING);
+                    // out.push_str(LINE_ENDING);
                 } else {
                     out.push_str(key);
                     out.push_str(LINE_ENDING);
@@ -884,6 +886,25 @@ impl Ini {
             Some(val) => Some(val[val.len() - 1].clone()),
             None => None,
         }
+    }
+
+    ///Returns a clone of the stored value from the key stored in the defined section.
+    ///Unlike accessing the map directly, `get()` can process your input to make case-insensitive access *if* the
+    ///default constructor is used.
+    ///All `get` functions will do this automatically under the hood.
+    ///## Example
+    ///```rust
+    ///use configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.load("tests/test.ini");
+    ///let value = config.get("default", "defaultvalues").unwrap();
+    ///assert_eq!(value, String::from("defaultvalues"));
+    ///```
+    ///Returns `Some(value)` of type `String` if value is found or else returns `None`.
+    pub fn get_vec(&self, section: &str, key: &str) -> Option<Vec<String>> {
+        let (section, key) = self.autocase(section, key);
+        self.map.get(&section)?.get(&key)?.clone()
     }
 
     ///Parses the stored value from the key stored in the defined section to a `bool`.

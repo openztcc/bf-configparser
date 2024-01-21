@@ -552,3 +552,27 @@ Key4=Four
 
     Ok(())
 }
+
+#[test]
+fn value_array() -> Result<(), Box<dyn Error>> {
+    let mut config = Ini::new_cs();
+    config.set_multiline(true);
+    config.load("tests/test_duplicate_key.ini")?;
+    let vec = config.get_vec("Section", "Name").unwrap();
+    assert_eq!(vec.len(), 4);
+    assert_eq!(vec, vec!["Value1", "Value Two", "Value 3", "Four"]);
+
+    assert_eq!(config.get("Section", "Name").unwrap(), "Four");
+
+    assert_eq!(
+        config.pretty_writes(&WriteOptions::new_with_params(true, 2, 1)),
+        "[Section]
+Name = Value1
+Name = Value Two
+Name = Value 3
+Name = Four
+"
+    );
+
+    Ok(())
+}
