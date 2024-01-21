@@ -1,5 +1,6 @@
 //!The ini module provides all the things necessary to load and parse ini-syntax files. The most important of which is the `Ini` struct.
 //!See the [implementation](https://docs.rs/configparser/*/configparser/ini/struct.Ini.html) documentation for more details.
+use std::collections::hash_map::Entry;
 #[cfg(feature = "indexmap")]
 use indexmap::IndexMap as Map;
 #[cfg(not(feature = "indexmap"))]
@@ -19,6 +20,22 @@ use std::fmt::Write;
 use std::fs;
 use std::path::Path;
 
+// ///A `Value` can either be a single value or an array of values, arrays are defined by assigning multiple values to the same key in the ini file.
+// ///## Example
+// ///```INI
+// /// [default]
+// /// key = value
+// /// key = value2
+// /// key = value3
+// ///```
+// /// The default `get` method will always return the last value
+// enum Value {
+//     Single(String),
+//     Array(Vec<String>),
+// }
+
+//TODO: Remove multiline flag, replace with multiline check
+
 ///The `Ini` struct simply contains a nested hashmap of the loaded configuration, the default section header and comment symbols.
 ///## Example
 ///```rust
@@ -29,7 +46,7 @@ use std::path::Path;
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 #[non_exhaustive]
 pub struct Ini {
-    map: Map<String, Map<String, Option<String>>>,
+    map: Map<String, Map<String, Option<Vec<String>>>>,
     default_section: std::string::String,
     comment_symbols: Vec<char>,
     delimiters: Vec<char>,
@@ -411,7 +428,7 @@ impl Ini {
     pub fn load<T: AsRef<Path>>(
         &mut self,
         path: T,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         self.map = match self.parse(match fs::read_to_string(&path) {
             Err(why) => {
                 return Err(format!(
@@ -454,7 +471,7 @@ impl Ini {
     pub fn load_and_append<T: AsRef<Path>>(
         &mut self,
         path: T,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         let loaded = match self.parse(match fs::read_to_string(&path) {
             Err(why) => {
                 return Err(format!(
@@ -499,14 +516,14 @@ impl Ini {
     ///    Ok(inner) => inner
     ///};
     ///let this_year = map["2000s"]["2020"].clone().unwrap();
-    ///assert_eq!(this_year, "bad"); // value accessible!
+    ///assert_eq!(this_year[0], "bad"); // value accessible!
     ///```
     ///Returns `Ok(map)` with a clone of the stored `Map` if no errors are thrown or else `Err(error_string)`.
     ///Use `get_mut_map()` if you want a mutable reference.
     pub fn read(
         &mut self,
         input: String,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         self.map = match self.parse(input) {
             Err(why) => return Err(why),
             Ok(map) => map,
@@ -536,15 +553,15 @@ impl Ini {
     ///let map = config.get_map().unwrap();
     ///let few_years_ago = map["2000s"]["2020"].clone().unwrap();
     ///let this_year = map["2000s"]["2023"].clone().unwrap();
-    ///assert_eq!(few_years_ago, "terrible"); // value updated!
-    ///assert_eq!(this_year, "better"); // keeps old values!
+    ///assert_eq!(few_years_ago[0], "terrible"); // value updated!
+    ///assert_eq!(this_year[0], "better"); // keeps old values!
     ///```
     ///Returns `Ok(map)` with a clone of the stored `Map` if no errors are thrown or else `Err(error_string)`.
     ///Use `get_mut_map()` if you want a mutable reference.
     pub fn read_and_append(
         &mut self,
         input: String,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         let loaded = match self.parse(input) {
             Err(why) => return Err(why),
             Ok(map) => map,
@@ -651,38 +668,43 @@ impl Ini {
         // push key/value pairs in outmap to out string.
         fn unparse_key_values(
             out: &mut String,
-            outmap: &Map<String, Option<String>>,
+            outmap: &Map<String, Option<Vec<String>>>,
             multiline: bool,
             space_around_delimiters: bool,
             indent: usize,
         ) {
             let delimiter = if space_around_delimiters { " = " } else { "=" };
             for (key, val) in outmap.iter() {
-                out.push_str(key);
-
-                if let Some(value) = val {
-                    if value.is_empty() {
-                        out.push_str(delimiter.trim_end());
-                    } else {
-                        out.push_str(delimiter);
-                    }
-
-                    if multiline {
-                        let mut lines = value.lines();
-
-                        out.push_str(lines.next().unwrap_or_default());
-
-                        for line in lines {
-                            out.push_str(LINE_ENDING);
-                            out.push_str(" ".repeat(indent).as_ref());
-                            out.push_str(line);
+                if let Some(value_vec) = val {
+                    for value in value_vec {
+                        out.push_str(key);
+                        // if let Some(value) = vals {
+                        if value.is_empty() {
+                            out.push_str(delimiter.trim_end());
+                        } else {
+                            out.push_str(delimiter);
                         }
-                    } else {
-                        out.push_str(value);
-                    }
-                }
 
-                out.push_str(LINE_ENDING);
+                        if is_multiline(value) {
+                            let mut lines = value.lines();
+
+                            out.push_str(lines.next().unwrap_or_default());
+
+                            for line in lines {
+                                out.push_str(LINE_ENDING);
+                                out.push_str(" ".repeat(indent).as_ref());
+                                out.push_str(line);
+                            }
+                        } else {
+                            out.push_str(value);
+                        }
+                        // }
+                    }
+                    out.push_str(LINE_ENDING);
+                } else {
+                    out.push_str(key);
+                    out.push_str(LINE_ENDING);
+                }
             }
         }
 
@@ -721,8 +743,8 @@ impl Ini {
     }
 
     ///Private function that parses ini-style syntax into a Map.
-    fn parse(&self, input: String) -> Result<Map<String, Map<String, Option<String>>>, String> {
-        let mut map: Map<String, Map<String, Option<String>>> = Map::new();
+    fn parse(&self, input: String) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
+        let mut map: Map<String, Map<String, Option<Vec<String>>>> = Map::new();
         let mut section = self.default_section.clone();
         let mut current_key: Option<String> = None;
 
@@ -761,35 +783,37 @@ impl Ini {
                 _ => {}
             }
 
-            if line.starts_with(char::is_whitespace) && self.multiline {
-                let key = match current_key.as_ref() {
-                    Some(x) => x,
-                    None => {
-                        return Err(format!(
-                            "line {}: Started with indentation but there is no current entry",
-                            num,
-                        ))
-                    }
-                };
-
-                let valmap = map.entry(section.clone()).or_default();
-
-                let val = valmap
-                    .entry(key.clone())
-                    .or_insert_with(|| Some(String::new()));
-
-                match val {
-                    Some(x) => {
-                        x.push_str(LINE_ENDING);
-                        x.push_str(trimmed);
-                    }
-                    None => {
-                        *val = Some(format!("{}{}", LINE_ENDING, trimmed));
-                    }
-                }
-
-                continue;
-            }
+            // TODO: Fix multiline support
+            // if line.starts_with(char::is_whitespace) && self.multiline {
+            //     let key = match current_key.as_ref() {
+            //         Some(x) => x,
+            //         None => {
+            //             return Err(format!(
+            //                 "line {}: Started with indentation but there is no current entry",
+            //                 num,
+            //             ))
+            //         }
+            //     };
+            //
+            //     // TODO: Fix up this valmap stuff, need to get or insert vector for value
+            //     let valmap = map.entry(section.clone()).or_default();
+            //
+            //     let val = valmap
+            //         .entry(key.clone())
+            //         .or_insert_with(|| Some(Vec::new())); //TODO: Investigate, Never reached? If so, add comment
+            //
+            //     match val {
+            //         Some(x) => {
+            //             x.push_str(LINE_ENDING);
+            //             x.push_str(trimmed);
+            //         }
+            //         None => {
+            //             *val = Some(format!("{}{}", LINE_ENDING, trimmed));
+            //         }
+            //     }
+            //
+            //     continue;
+            // }
 
             let valmap = map.entry(section.clone()).or_default();
 
@@ -804,7 +828,19 @@ impl Ini {
 
                         let value = trimmed[delimiter + 1..].trim().to_owned();
 
-                        valmap.insert(key, Some(value));
+                        // TODO: Maybe replace Option<vec> with an empty vec?
+                        match valmap.entry(key) {
+                            Entry::Vacant(e) => { e.insert(Some(vec![value])); },
+                            Entry::Occupied(mut e) => {
+                                match e.get_mut() {
+                                    Some(x) => { x.push(value); },
+                                    None => { e.insert(Some(vec![value])); },
+                                }
+                            }
+                        }
+                        // valmap.insert(key, Some(value));
+                        // valmap.insert(key, Some(value));
+
                     }
                 }
                 None => {
@@ -844,7 +880,10 @@ impl Ini {
     ///Returns `Some(value)` of type `String` if value is found or else returns `None`.
     pub fn get(&self, section: &str, key: &str) -> Option<String> {
         let (section, key) = self.autocase(section, key);
-        self.map.get(&section)?.get(&key)?.clone()
+        match self.map.get(&section)?.get(&key)?.clone() {
+            Some(val) => Some(val[val.len() - 1].clone()),
+            None => None,
+        }
     }
 
     ///Parses the stored value from the key stored in the defined section to a `bool`.
@@ -865,7 +904,7 @@ impl Ini {
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner.to_lowercase().parse::<bool>() {
+                    Some(inner) => match inner[inner.len() - 1].to_lowercase().parse::<bool>() {
                         Err(why) => Err(why.to_string()),
                         Ok(boolean) => Ok(Some(boolean)),
                     },
@@ -897,7 +936,7 @@ impl Ini {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
                     Some(inner) => {
-                        let boolval = &inner.to_lowercase()[..];
+                        let boolval = &inner[inner.len() - 1].to_lowercase()[..];
                         if self
                             .boolean_values
                             .get(&true)
@@ -946,7 +985,7 @@ impl Ini {
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner.parse::<i64>() {
+                    Some(inner) => match inner[inner.len() - 1].parse::<i64>() {
                         Err(why) => Err(why.to_string()),
                         Ok(int) => Ok(Some(int)),
                     },
@@ -975,7 +1014,7 @@ impl Ini {
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner.parse::<u64>() {
+                    Some(inner) => match inner[inner.len() - 1].parse::<u64>() {
                         Err(why) => Err(why.to_string()),
                         Ok(uint) => Ok(Some(uint)),
                     },
@@ -1004,7 +1043,7 @@ impl Ini {
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner.parse::<f64>() {
+                    Some(inner) => match inner[inner.len() - 1].parse::<f64>() {
                         Err(why) => Err(why.to_string()),
                         Ok(float) => Ok(Some(float)),
                     },
@@ -1030,7 +1069,7 @@ impl Ini {
     ///```
     ///Returns `Some(map)` if map is non-empty or else returns `None`.
     ///Similar to `load()` but returns an `Option` type with the currently stored `Map`.
-    pub fn get_map(&self) -> Option<Map<String, Map<String, Option<String>>>> {
+    pub fn get_map(&self) -> Option<Map<String, Map<String, Option<Vec<String>>>>> {
         if self.map.is_empty() {
             None
         } else {
@@ -1052,7 +1091,7 @@ impl Ini {
     ///```
     ///If you just need to definitely mutate the map, use `get_mut_map()` instead. Alternatively, you can generate a snapshot by getting a clone
     ///with `get_map()` and work with that.
-    pub fn get_map_ref(&self) -> &Map<String, Map<String, Option<String>>> {
+    pub fn get_map_ref(&self) -> &Map<String, Map<String, Option<Vec<String>>>> {
         &self.map
     }
 
@@ -1070,10 +1109,12 @@ impl Ini {
     ///assert_eq!(config.get("topsecrets", "nuclear launch codes"), None);  // inserted successfully!
     ///```
     ///If you just need to access the map without mutating, use `get_map_ref()` or make a clone with `get_map()` instead.
-    pub fn get_mut_map(&mut self) -> &mut Map<String, Map<String, Option<String>>> {
+    pub fn get_mut_map(&mut self) -> &mut Map<String, Map<String, Option<Vec<String>>>> {
         &mut self.map
     }
 
+    //TODO: Update this documentation, replaces all existing values
+    //TODO: Update to return last string in vec rather than entire vec?
     ///Sets an `Option<String>` in the `Map` stored in our struct. If a particular section or key does not exist, it will be automatically created.
     ///An existing value in the map  will be overwritten. You can also set `None` safely.
     ///## Example
@@ -1096,12 +1137,17 @@ impl Ini {
         section: &str,
         key: &str,
         value: Option<String>,
-    ) -> Option<Option<String>> {
+    ) -> Option<Option<Vec<String>>> {
+        //TODO: Add `add` function
         let (section, key) = self.autocase(section, key);
+        let value = match value {
+            Some(val) => Some(vec![val]),
+            None => None,
+        };
         match self.map.get_mut(&section) {
             Some(secmap) => secmap.insert(key, value),
             None => {
-                let mut valmap: Map<String, Option<String>> = Map::new();
+                let mut valmap: Map<String, Option<Vec<String>>> = Map::new();
                 valmap.insert(key, value);
                 self.map.insert(section, valmap);
                 None
@@ -1130,7 +1176,7 @@ impl Ini {
         section: &str,
         key: &str,
         value: Option<&str>,
-    ) -> Option<Option<String>> {
+    ) -> Option<Option<Vec<String>>> {
         let (section, key) = self.autocase(section, key);
         self.set(&section, &key, value.map(String::from))
     }
@@ -1165,7 +1211,7 @@ impl Ini {
     ///assert!(config.get_map_ref().is_empty());  // with the last section removed, our map is now empty!
     ///```
     ///Returns `Some(section_map)` if the section exists or else, `None`.
-    pub fn remove_section(&mut self, section: &str) -> Option<Map<String, Option<String>>> {
+    pub fn remove_section(&mut self, section: &str) -> Option<Map<String, Option<Vec<String>>>> {
         let section = if self.case_sensitive {
             section.to_owned()
         } else {
@@ -1186,10 +1232,10 @@ impl Ini {
     ///  [anothersection]
     ///  updog=differentdog"));
     ///let val = config.remove_key("anothersection", "updog").unwrap().unwrap();
-    ///assert_eq!(val, String::from("differentdog"));  // with the last section removed, our map is now empty!
+    ///assert_eq!(val[0], String::from("differentdog"));  // with the last section removed, our map is now empty!
     ///```
     ///Returns `Some(Option<String>)` if the value exists or else, `None`.
-    pub fn remove_key(&mut self, section: &str, key: &str) -> Option<Option<String>> {
+    pub fn remove_key(&mut self, section: &str, key: &str) -> Option<Option<Vec<String>>> {
         let (section, key) = self.autocase(section, key);
         self.map.get_mut(&section)?.remove(&key)
     }
@@ -1207,7 +1253,7 @@ impl Ini {
     pub async fn load_async<T: AsRef<Path>>(
         &mut self,
         path: T,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         self.map = match self.parse(match async_fs::read_to_string(&path).await {
             Err(why) => {
                 return Err(format!(
@@ -1241,7 +1287,7 @@ impl Ini {
     pub async fn load_and_append_async<T: AsRef<Path>>(
         &mut self,
         path: T,
-    ) -> Result<Map<String, Map<String, Option<String>>>, String> {
+    ) -> Result<Map<String, Map<String, Option<Vec<String>>>>, String> {
         let loaded = match self.parse(match async_fs::read_to_string(&path).await {
             Err(why) => {
                 return Err(format!(
@@ -1295,4 +1341,10 @@ impl Ini {
     ) -> std::io::Result<()> {
         async_fs::write(path.as_ref(), self.unparse(write_options)).await
     }
+}
+
+///Private function to check if string contains newlines
+fn is_multiline(line: &String) -> bool {
+    line.contains(LINE_ENDING)
+    // line.chars().fold(false, |acc, c| c == '\n' || c == '\r')
 }

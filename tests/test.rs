@@ -68,18 +68,18 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
     assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
     assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
     assert_eq!(
-        map["default"]["defaultvalues"].clone().unwrap(),
+        map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"
     );
     assert_eq!(
-        map["topsecret"]["kfc"].clone().unwrap(),
+        map["topsecret"]["kfc"].clone().unwrap()[0],
         "the secret herb is orega-"
     );
-    assert_eq!(map["topsecret"]["empty string"].clone().unwrap(), "");
+    assert_eq!(map["topsecret"]["empty string"].clone().unwrap()[0], "");
     assert_eq!(map["topsecret"]["none string"], None);
-    assert_eq!(map["spacing"]["indented"].clone().unwrap(), "indented");
+    assert_eq!(map["spacing"]["indented"].clone().unwrap()[0], "indented");
     assert_eq!(
-        map["spacing"]["not indented"].clone().unwrap(),
+        map["spacing"]["not indented"].clone().unwrap()[0],
         "not indented"
     );
     let mut config2 = config.clone();
@@ -91,10 +91,10 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
     let mut_map = config.get_mut_map();
     mut_map.get_mut("topsecret").unwrap().insert(
         String::from("none string"),
-        Some(String::from("None string")),
+        Some(vec![String::from("None string")]),
     );
     assert_eq!(
-        mut_map["topsecret"]["none string"].clone().unwrap(),
+        mut_map["topsecret"]["none string"].clone().unwrap()[0],
         "None string"
     );
     mut_map.clear();
@@ -196,18 +196,18 @@ fn cs() -> Result<(), Box<dyn Error>> {
     assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
     assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
     assert_eq!(
-        map["default"]["defaultvalues"].clone().unwrap(),
+        map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"
     );
     assert_eq!(
-        map["topsecret"]["KFC"].clone().unwrap(),
+        map["topsecret"]["KFC"].clone().unwrap()[0],
         "the secret herb is orega-"
     );
-    assert_eq!(map["topsecret"]["Empty string"].clone().unwrap(), "");
+    assert_eq!(map["topsecret"]["Empty string"].clone().unwrap()[0], "");
     assert_eq!(map["topsecret"]["None string"], None);
-    assert_eq!(map["spacing"]["indented"].clone().unwrap(), "indented");
+    assert_eq!(map["spacing"]["indented"].clone().unwrap()[0], "indented");
     assert_eq!(
-        map["spacing"]["not indented"].clone().unwrap(),
+        map["spacing"]["not indented"].clone().unwrap()[0],
         "not indented"
     );
     let mut config2 = config.clone();
@@ -219,10 +219,10 @@ fn cs() -> Result<(), Box<dyn Error>> {
     let mut_map = config.get_mut_map();
     mut_map.get_mut("topsecret").unwrap().insert(
         String::from("none string"),
-        Some(String::from("None string")),
+        Some(vec![String::from("None string")]),
     );
     assert_eq!(
-        mut_map["topsecret"]["none string"].clone().unwrap(),
+        mut_map["topsecret"]["none string"].clone().unwrap()[0],
         "None string"
     );
     mut_map.clear();
