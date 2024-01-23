@@ -7,8 +7,8 @@ use indexmap::IndexMap as Map;
 use std::collections::HashMap as Map;
 
 #[deprecated(
-    since = "3.0.4",
-    note = "async-std runtime has been replaced with tokio"
+since = "3.0.4",
+note = "async-std runtime has been replaced with tokio"
 )]
 #[cfg(feature = "async-std")]
 #[cfg(feature = "tokio")]
@@ -20,21 +20,7 @@ use std::fmt::Write;
 use std::fs;
 use std::path::Path;
 
-// ///A `Value` can either be a single value or an array of values, arrays are defined by assigning multiple values to the same key in the ini file.
-// ///## Example
-// ///```INI
-// /// [default]
-// /// key = value
-// /// key = value2
-// /// key = value3
-// ///```
-// /// The default `get` method will always return the last value
-// enum Value {
-//     Single(String),
-//     Array(Vec<String>),
-// }
-
-//TODO: Remove multiline flag, replace with multiline check
+//TODO: Reintroduce multiline support
 
 ///The `Ini` struct simply contains a nested hashmap of the loaded configuration, the default section header and comment symbols.
 ///## Example
@@ -51,6 +37,7 @@ pub struct Ini {
     comment_symbols: Vec<char>,
     delimiters: Vec<char>,
     boolean_values: HashMap<bool, Vec<String>>,
+    boolean_map: HashMap<String, bool>,
     case_sensitive: bool,
     multiline: bool,
 }
@@ -119,6 +106,7 @@ pub struct IniDefault {
     ///assert_eq!(default.multiline, false);
     ///```
     pub multiline: bool,
+    pub boolean_map: HashMap<String, bool>,
 }
 
 impl Default for IniDefault {
@@ -144,10 +132,24 @@ impl Default for IniDefault {
                         .collect(),
                 ),
             ]
-            .iter()
-            .cloned()
-            .collect(),
+                .iter()
+                .cloned()
+                .collect(),
             case_sensitive: false,
+            boolean_map: HashMap::from([
+                ("true".to_owned(), true),
+                ("yes".to_owned(), true),
+                ("t".to_owned(), true),
+                ("y".to_owned(), true),
+                ("on".to_owned(), true),
+                ("1".to_owned(), true),
+                ("false".to_owned(), false),
+                ("no".to_owned(), false),
+                ("f".to_owned(), false),
+                ("n".to_owned(), false),
+                ("off".to_owned(), false),
+                ("0".to_owned(), false),
+            ]),
         }
     }
 }
@@ -304,6 +306,7 @@ impl Ini {
             comment_symbols: defaults.comment_symbols,
             delimiters: defaults.delimiters,
             boolean_values: defaults.boolean_values,
+            boolean_map: defaults.boolean_map,
             case_sensitive: defaults.case_sensitive,
             multiline: defaults.multiline,
         }
@@ -324,6 +327,7 @@ impl Ini {
             comment_symbols: self.comment_symbols.to_owned(),
             delimiters: self.delimiters.to_owned(),
             boolean_values: self.boolean_values.to_owned(),
+            boolean_map: self.boolean_map.to_owned(),
             case_sensitive: self.case_sensitive,
             multiline: self.multiline,
         }
@@ -435,7 +439,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(s) => s,
         }) {
@@ -444,7 +448,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(map) => map,
         };
@@ -478,7 +482,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(s) => s,
         }) {
@@ -487,7 +491,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(map) => map,
         };
@@ -832,17 +836,16 @@ impl Ini {
 
                         // TODO: Maybe replace Option<vec> with an empty vec?
                         match valmap.entry(key) {
-                            Entry::Vacant(e) => { e.insert(Some(vec![value])); },
+                            Entry::Vacant(e) => { e.insert(Some(vec![value])); }
                             Entry::Occupied(mut e) => {
                                 match e.get_mut() {
-                                    Some(x) => { x.push(value); },
-                                    None => { e.insert(Some(vec![value])); },
+                                    Some(x) => { x.push(value); }
+                                    None => { e.insert(Some(vec![value])); }
                                 }
                             }
                         }
                         // valmap.insert(key, Some(value));
                         // valmap.insert(key, Some(value));
-
                     }
                 }
                 None => {
@@ -888,20 +891,17 @@ impl Ini {
         }
     }
 
-    ///Returns a clone of the stored value from the key stored in the defined section.
-    ///Unlike accessing the map directly, `get()` can process your input to make case-insensitive access *if* the
-    ///default constructor is used.
-    ///All `get` functions will do this automatically under the hood.
+    ///Returns a clone of the stored value vector from the key stored in the defined section.
     ///## Example
     ///```rust
     ///use configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
-    ///config.load("tests/test.ini");
-    ///let value = config.get("default", "defaultvalues").unwrap();
-    ///assert_eq!(value, String::from("defaultvalues"));
+    ///config.load("tests/test_duplicate_key.ini");
+    ///let value = config.get_vec("Section", "Name").unwrap();
+    ///assert_eq!(value, vec!["Value1", "Value Two", "Value 3", "Four"]);
     ///```
-    ///Returns `Some(value)` of type `String` if value is found or else returns `None`.
+    ///Returns `Some(value)` of type `Vec<String>` if value is found or else returns `None`.
     pub fn get_vec(&self, section: &str, key: &str) -> Option<Vec<String>> {
         let (section, key) = self.autocase(section, key);
         self.map.get(&section)?.get(&key)?.clone()
@@ -936,6 +936,38 @@ impl Ini {
             None => Ok(None),
         }
     }
+
+    ///Parses the stored values from the key stored in the defined section to a `bool`.
+    ///For ease of use, the function converts the type case-insensitively (`true` == `True`).
+    ///## Example
+    ///```rust
+    ///use configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.load("tests/test_duplicate_key_more.ini");
+    ///let value = config.get_bool_vec("Bools", "bool").unwrap().unwrap();
+    ///assert_eq!(value, vec![true, false]);  // value accessible!
+    ///```
+    ///Returns `Ok(Some(value))` of type `Vec<bool>` if value is found or else returns `Ok(None)`.
+    ///If the parsing fails, it returns an `Err(string)`.
+    pub fn get_bool_vec(&self, section: &str, key: &str) -> Result<Option<Vec<bool>>, String> {
+        let (section, key) = self.autocase(section, key);
+        match self.map.get(&section) {
+            Some(secmap) => match secmap.get(&key) {
+                Some(val) => match val {
+                    // Some(inner) => match inner.to_lowercase().parse::<bool>() {
+                    Some(inner) => match inner.iter().map(|x| x.to_lowercase().parse::<bool>()).collect() {
+                        Err(why) => Err(why.to_string()),
+                        Ok(boolean) => Ok(Some(boolean)),
+                    },
+                    None => Ok(None),
+                },
+                None => Ok(None),
+            },
+            None => Ok(None),
+        }
+    }
+
 
     ///Parses the stored value from the key stored in the defined section to a `bool`. For ease of use, the function converts the type coerces a match.
     ///It attempts to case-insenstively find `true`, `yes`, `t`, `y`, `1` and `on` to parse it as `True`.
@@ -980,6 +1012,45 @@ impl Ini {
                                 section, key
                             ))
                         }
+                    }
+                    None => Ok(None),
+                },
+                None => Ok(None),
+            },
+            None => Ok(None),
+        }
+    }
+
+    ///Parses the stored values from the key stored in the defined section to a `bool`. For ease of use, the function converts the type coerces a match.
+    ///It attempts to case-insenstively find `true`, `yes`, `t`, `y`, `1` and `on` to parse it as `True`.
+    ///Similarly it attempts to case-insensitvely find `false`, `no`, `f`, `n`, `0` and `off` to parse it as `False`.
+    ///## Example
+    ///```rust
+    ///use configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.load("tests/test_duplicate_key_more.ini");
+    /// let value = config.get_bool_vec_coerce("BoolsCoerce", "Bool").unwrap().unwrap();
+    /// assert_eq!(value, vec![true, false, true, false]);  // values accessible!
+    ///```
+    ///Returns `Ok(Some(Vec(value)))` of type `bool` if value is found or else returns `Ok(None)`.
+    ///If the parsing fails, it returns an `Err(string)`.
+    pub fn get_bool_vec_coerce(&self, section: &str, key: &str) -> Result<Option<Vec<bool>>, String> {
+        let (section, key) = self.autocase(section, key);
+        match self.map.get(&section) {
+            Some(secmap) => match secmap.get(&key) {
+                Some(val) => match val {
+                    Some(inner) => {
+                        inner.into_iter().map(|x| {
+                            // let boolval = &x.to_lowercase()[..];
+                            let boolval = &x.to_lowercase();
+                            match self.boolean_map.get(boolval) {
+                                Some(val) => {
+                                    Ok(Some(*val))
+                                },
+                                None => Err(format!("Unable to parse value into bool")),
+                            }
+                        }).collect()
                     }
                     None => Ok(None),
                 },
@@ -1281,7 +1352,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(s) => s,
         }) {
@@ -1290,7 +1361,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(map) => map,
         };
@@ -1315,7 +1386,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(s) => s,
         }) {
@@ -1324,7 +1395,7 @@ impl Ini {
                     "couldn't read {}: {}",
                     &path.as_ref().display(),
                     why
-                ))
+                ));
             }
             Ok(map) => map,
         };
