@@ -61,12 +61,12 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
         config.get("topsecret", "colon").unwrap(),
         "value after colon"
     );
-    assert!(config.getbool("values", "Bool")?.unwrap());
-    assert!(!config.getboolcoerce("values", "Boolcoerce")?.unwrap());
-    assert_eq!(config.getint("values", "Int")?.unwrap(), -31415);
-    assert_eq!(config.getuint("values", "Uint")?.unwrap(), 31415);
-    assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
-    assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
+    assert!(config.get_parse::<bool>("values", "Bool")?.unwrap());
+    assert!(!config.get_bool_coerce("values", "Boolcoerce")?.unwrap());
+    assert_eq!(config.get_parse::<i64>("values", "Int")?.unwrap(), -31415);
+    assert_eq!(config.get_parse::<u64>("values", "Uint")?.unwrap(), 31415);
+    assert_eq!(config.get_parse::<f64>("values", "Float")?.unwrap(), 3.1415);
+    assert_eq!(config.get_parse::<f64>("topsecret", "None string"), Ok(None));
     assert_eq!(
         map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"
@@ -124,7 +124,7 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
     assert_eq!(config3.get("topsecret", "KFC").unwrap(), "redacted");
     // spacing -> indented exists in tests/test.ini, but not tests/test_more.ini
     assert_eq!(config3.get("spacing", "indented").unwrap(), "indented");
-    assert!(!config3.getbool("values", "Bool")?.unwrap());
+    assert!(!config3.get_parse::<bool>("values", "Bool")?.unwrap());
 
     Ok(())
 }
@@ -189,12 +189,12 @@ fn cs() -> Result<(), Box<dyn Error>> {
         config.get("topsecret", "colon").unwrap(),
         "value after colon"
     );
-    assert!(config.getbool("values", "Bool")?.unwrap());
-    assert!(!config.getboolcoerce("values", "Boolcoerce")?.unwrap());
-    assert_eq!(config.getint("values", "Int")?.unwrap(), -31415);
-    assert_eq!(config.getuint("values", "Uint")?.unwrap(), 31415);
-    assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
-    assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
+    assert!(config.get_parse::<bool>("values", "Bool")?.unwrap());
+    assert!(!config.get_bool_coerce("values", "Boolcoerce")?.unwrap());
+    assert_eq!(config.get_parse::<i64>("values", "Int")?.unwrap(), -31415);
+    assert_eq!(config.get_parse::<u64>("values", "Uint")?.unwrap(), 31415);
+    assert_eq!(config.get_parse::<f64>("values", "Float")?.unwrap(), 3.1415);
+    assert_eq!(config.get_parse::<f64>("topsecret", "None string"), Ok(None));
     assert_eq!(
         map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"

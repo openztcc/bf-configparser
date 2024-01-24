@@ -16,9 +16,10 @@ use tokio::fs as async_fs;
 
 use std::collections::HashMap;
 use std::convert::AsRef;
-use std::fmt::Write;
+use std::fmt::{Debug, Write};
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 
 //TODO: Reintroduce multiline support
 
@@ -907,68 +908,8 @@ impl Ini {
         self.map.get(&section)?.get(&key)?.clone()
     }
 
-    ///Parses the stored value from the key stored in the defined section to a `bool`.
-    ///For ease of use, the function converts the type case-insensitively (`true` == `True`).
-    ///## Example
-    ///```rust
-    ///use configparser::ini::Ini;
-    ///
-    ///let mut config = Ini::new();
-    ///config.load("tests/test.ini");
-    ///let value = config.getbool("values", "bool").unwrap().unwrap();
-    ///assert!(value);  // value accessible!
-    ///```
-    ///Returns `Ok(Some(value))` of type `bool` if value is found or else returns `Ok(None)`.
-    ///If the parsing fails, it returns an `Err(string)`.
-    pub fn getbool(&self, section: &str, key: &str) -> Result<Option<bool>, String> {
-        let (section, key) = self.autocase(section, key);
-        match self.map.get(&section) {
-            Some(secmap) => match secmap.get(&key) {
-                Some(val) => match val {
-                    Some(inner) => match inner[inner.len() - 1].to_lowercase().parse::<bool>() {
-                        Err(why) => Err(why.to_string()),
-                        Ok(boolean) => Ok(Some(boolean)),
-                    },
-                    None => Ok(None),
-                },
-                None => Ok(None),
-            },
-            None => Ok(None),
-        }
-    }
 
-    ///Parses the stored values from the key stored in the defined section to a `bool`.
-    ///For ease of use, the function converts the type case-insensitively (`true` == `True`).
-    ///## Example
-    ///```rust
-    ///use configparser::ini::Ini;
-    ///
-    ///let mut config = Ini::new();
-    ///config.load("tests/test_duplicate_key_more.ini");
-    ///let value = config.get_bool_vec("Bools", "bool").unwrap().unwrap();
-    ///assert_eq!(value, vec![true, false]);  // value accessible!
-    ///```
-    ///Returns `Ok(Some(value))` of type `Vec<bool>` if value is found or else returns `Ok(None)`.
-    ///If the parsing fails, it returns an `Err(string)`.
-    pub fn get_bool_vec(&self, section: &str, key: &str) -> Result<Option<Vec<bool>>, String> {
-        let (section, key) = self.autocase(section, key);
-        match self.map.get(&section) {
-            Some(secmap) => match secmap.get(&key) {
-                Some(val) => match val {
-                    // Some(inner) => match inner.to_lowercase().parse::<bool>() {
-                    Some(inner) => match inner.iter().map(|x| x.to_lowercase().parse::<bool>()).collect() {
-                        Err(why) => Err(why.to_string()),
-                        Ok(boolean) => Ok(Some(boolean)),
-                    },
-                    None => Ok(None),
-                },
-                None => Ok(None),
-            },
-            None => Ok(None),
-        }
-    }
-
-
+    //TODO: Make this consistent with get_bool_vec_coerce
     ///Parses the stored value from the key stored in the defined section to a `bool`. For ease of use, the function converts the type coerces a match.
     ///It attempts to case-insenstively find `true`, `yes`, `t`, `y`, `1` and `on` to parse it as `True`.
     ///Similarly it attempts to case-insensitvely find `false`, `no`, `f`, `n`, `0` and `off` to parse it as `False`.
@@ -978,12 +919,12 @@ impl Ini {
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test.ini");
-    ///let value = config.getboolcoerce("values", "boolcoerce").unwrap().unwrap();
+    ///let value = config.get_bool_coerce("values", "boolcoerce").unwrap().unwrap();
     ///assert!(!value);  // value accessible!
     ///```
     ///Returns `Ok(Some(value))` of type `bool` if value is found or else returns `Ok(None)`.
     ///If the parsing fails, it returns an `Err(string)`.
-    pub fn getboolcoerce(&self, section: &str, key: &str) -> Result<Option<bool>, String> {
+    pub fn get_bool_coerce(&self, section: &str, key: &str) -> Result<Option<bool>, String> {
         let (section, key) = self.autocase(section, key);
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
@@ -1060,26 +1001,19 @@ impl Ini {
         }
     }
 
-    ///Parses the stored value from the key stored in the defined section to an `i64`.
-    ///## Example
-    ///```rust
-    ///use configparser::ini::Ini;
-    ///
-    ///let mut config = Ini::new();
-    ///config.load("tests/test.ini");
-    ///let value = config.getint("values", "int").unwrap().unwrap();
-    ///assert_eq!(value, -31415);  // value accessible!
-    ///```
-    ///Returns `Ok(Some(value))` of type `i64` if value is found or else returns `Ok(None)`.
-    ///If the parsing fails, it returns an `Err(string)`.
-    pub fn getint(&self, section: &str, key: &str) -> Result<Option<i64>, String> {
+    pub fn get_parse<T>(&self, section: &str, key: &str) -> Result<Option<T>, String>
+        where
+        T: FromStr,
+        T::Err: Debug,
+        <T as FromStr>::Err: std::fmt::Display,
+    {
         let (section, key) = self.autocase(section, key);
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner[inner.len() - 1].parse::<i64>() {
+                    Some(inner) => match inner[inner.len() - 1].to_lowercase().parse::<T>() {
                         Err(why) => Err(why.to_string()),
-                        Ok(int) => Ok(Some(int)),
+                        Ok(parsed) => Ok(Some(parsed)),
                     },
                     None => Ok(None),
                 },
@@ -1089,26 +1023,19 @@ impl Ini {
         }
     }
 
-    ///Parses the stored value from the key stored in the defined section to a `u64`.
-    ///## Example
-    ///```rust
-    ///use configparser::ini::Ini;
-    ///
-    ///let mut config = Ini::new();
-    ///config.load("tests/test.ini");
-    ///let value = config.getint("values", "Uint").unwrap().unwrap();
-    ///assert_eq!(value, 31415);  // value accessible!
-    ///```
-    ///Returns `Ok(Some(value))` of type `u64` if value is found or else returns `Ok(None)`.
-    ///If the parsing fails, it returns an `Err(string)`.
-    pub fn getuint(&self, section: &str, key: &str) -> Result<Option<u64>, String> {
+    pub fn get_vec_parse<T>(&self, section: &str, key: &str) -> Result<Option<Vec<T>>, String>
+        where
+        T: FromStr,
+        T::Err: Debug,
+        <T as FromStr>::Err: std::fmt::Display,
+        {
         let (section, key) = self.autocase(section, key);
         match self.map.get(&section) {
             Some(secmap) => match secmap.get(&key) {
                 Some(val) => match val {
-                    Some(inner) => match inner[inner.len() - 1].parse::<u64>() {
+                    Some(inner) => match inner.iter().map(|x| x.to_lowercase().parse::<T>()).collect() {
                         Err(why) => Err(why.to_string()),
-                        Ok(uint) => Ok(Some(uint)),
+                        Ok(parsed) => Ok(Some(parsed)),
                     },
                     None => Ok(None),
                 },
@@ -1118,34 +1045,6 @@ impl Ini {
         }
     }
 
-    ///Parses the stored value from the key stored in the defined section to a `f64`.
-    ///## Example
-    ///```rust
-    ///use configparser::ini::Ini;
-    ///
-    ///let mut config = Ini::new();
-    ///config.load("tests/test.ini");
-    ///let value = config.getfloat("values", "float").unwrap().unwrap();
-    ///assert_eq!(value, 3.1415);  // value accessible!
-    ///```
-    ///Returns `Ok(Some(value))` of type `f64` if value is found or else returns `Ok(None)`.
-    ///If the parsing fails, it returns an `Err(string)`.
-    pub fn getfloat(&self, section: &str, key: &str) -> Result<Option<f64>, String> {
-        let (section, key) = self.autocase(section, key);
-        match self.map.get(&section) {
-            Some(secmap) => match secmap.get(&key) {
-                Some(val) => match val {
-                    Some(inner) => match inner[inner.len() - 1].parse::<f64>() {
-                        Err(why) => Err(why.to_string()),
-                        Ok(float) => Ok(Some(float)),
-                    },
-                    None => Ok(None),
-                },
-                None => Ok(None),
-            },
-            None => Ok(None),
-        }
-    }
 
     ///Returns a clone of the `Map` stored in our struct.
     ///## Example

@@ -6,5 +6,6 @@ This is a Rust library for parsing and writing configuration files based on `INI
 
 It is forked from [configparser-rs](https://github.com/QEDK/configparser-rs), the main differences are:
  - Duplicate keys create a list of values instead of overwriting the previous value
- - Breaks api compatibility with Python's configparser, `getbool()` becomes `get_bool()` etc.
- - Adds `get_bool_vec()` and other vector getters
+ - Breaks api compatibility with Python's configparser, `getbool()` and other non-snake case functions are removed
+ - Adds `get_vec()` function to get a vector of values
+ - Adds generic `get_parse()` and `get_vec_parse` functions, replacing all `get*()` functions
