@@ -835,7 +835,6 @@ impl Ini {
 
                         let value = trimmed[delimiter + 1..].trim().to_owned();
 
-                        // TODO: Maybe replace Option<vec> with an empty vec?
                         match valmap.entry(key) {
                             Entry::Vacant(e) => { e.insert(Some(vec![value])); }
                             Entry::Occupied(mut e) => {
@@ -845,8 +844,6 @@ impl Ini {
                                 }
                             }
                         }
-                        // valmap.insert(key, Some(value));
-                        // valmap.insert(key, Some(value));
                     }
                 }
                 None => {
@@ -1104,10 +1101,8 @@ impl Ini {
         &mut self.map
     }
 
-    //TODO: Update this documentation, replaces all existing values
-    //TODO: Update to return last string in vec rather than entire vec?
     ///Sets an `Option<String>` in the `Map` stored in our struct. If a particular section or key does not exist, it will be automatically created.
-    ///An existing value in the map  will be overwritten. You can also set `None` safely.
+    ///An existing value or values in the map  will be overwritten. You can also set `None` safely.
     ///## Example
     ///```rust
     ///use configparser::ini::Ini;
@@ -1121,7 +1116,7 @@ impl Ini {
     ///config.set("section", "key", None);  // also valid!
     ///assert_eq!(config.get("section", "key"), None);  // correct!
     ///```
-    ///Returns `None` if there is no existing value, else returns `Some(Option<String>)`, with the existing value being the wrapped `Option<String>`.
+    ///Returns `None` if there is no existing value, else returns `Some(Option<Vec<String>>)`, with the existing value being the wrapped `Option<String>`.
     ///If you want to insert using a string literal, use `setstr()` instead.
     pub fn set(
         &mut self,
@@ -1129,7 +1124,6 @@ impl Ini {
         key: &str,
         value: Option<String>,
     ) -> Option<Option<Vec<String>>> {
-        //TODO: Add `add` function
         let (section, key) = self.autocase(section, key);
         let value = match value {
             Some(val) => Some(vec![val]),
@@ -1147,7 +1141,7 @@ impl Ini {
     }
 
     ///Sets an `Option<&str>` in the `Map` stored in our struct. If a particular section or key does not exist, it will be automatically created.
-    ///An existing value in the map  will be overwritten. You can also set `None` safely.
+    ///An existing value or values in the map  will be overwritten. You can also set `None` safely.
     ///## Example
     ///```rust
     ///use configparser::ini::Ini;
@@ -1160,7 +1154,7 @@ impl Ini {
     ///config.setstr("section", "key", None);  // also valid!
     ///assert_eq!(config.get("section", "key"), None);  // correct!
     ///```
-    ///Returns `None` if there is no existing value, else returns `Some(Option<String>)`, with the existing value being the wrapped `Option<String>`.
+    ///Returns `None` if there is no existing value, else returns `Some(Option<Vec<String>>)`, with the existing value being the wrapped `Option<String>`.
     ///If you want to insert using a `String`, use `set()` instead.
     pub fn setstr(
         &mut self,
@@ -1170,6 +1164,108 @@ impl Ini {
     ) -> Option<Option<Vec<String>>> {
         let (section, key) = self.autocase(section, key);
         self.set(&section, &key, value.map(String::from))
+    }
+
+    ///Adds an `&str` to the `Map` stored in our struct. If a particular section or key does not exist, it will be automatically created.
+    ///An existing vector in the map will be appended to. Passing in None is invalid
+    ///## Example
+    ///```rust
+    ///use configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.read(String::from(
+    ///  "[section]
+    ///  key=value1"));
+    ///config.add("section", "key", "value2".to_string());
+    ///assert_eq!(config.get("section", "key"), Some("value2".to_string()));
+    ///assert_eq!(config.get_vec("section", "key"), Some(vec!["value1".to_string(), "value2".to_string()]));
+    ///```
+    ///Returns the entire `vec` with the added string
+    ///If you want to replace the existing value/s, use `set()` or `setstr()` instead.
+    pub fn add(
+        &mut self,
+        section: &str,
+        key: &str,
+        value: String,
+    ) -> Option<Option<Vec<String>>> {
+        let (section, key) = self.autocase(section, key);
+        match self.map.get_mut(&section) {
+            Some(secmap) => {
+                match secmap.get_mut(&key) {
+                    Some(val) => {
+                        match val {
+                            Some(inner) => {
+                                inner.push(value);
+                                Some(Some(inner.clone()))
+                            }
+                            None => {
+                                secmap.insert(key, Some(vec![value]))
+                            }
+                        }
+                    }
+                    None => {
+                        secmap.insert(key, Some(vec![value]))
+                    }
+                }
+            },
+            None => {
+                let mut valmap: Map<String, Option<Vec<String>>> = Map::new();
+                valmap.insert(key, Some(vec![value]));
+                self.map.insert(section, valmap);
+                None
+            }
+        }
+    }
+
+    ///Adds an `&str` to the `Map` stored in our struct. If a particular section or key does not exist, it will be automatically created.
+    ///An existing vector in the map will be appended to. Passing in None is invalid
+    ///## Example
+    ///```rust
+    ///use configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.read(String::from(
+    ///  "[section]
+    ///  key=value1"));
+    ///config.addstr("section", "key", "value2");
+    ///assert_eq!(config.get("section", "key"), Some("value2".to_string()));
+    ///assert_eq!(config.get_vec("section", "key"), Some(vec!["value1".to_string(), "value2".to_string()]));
+    ///```
+    ///Returns the entire `vec` with the added string
+    ///If you want to replace the existing value/s, use `set()` or `setstr()` instead.
+    pub fn addstr(
+        &mut self,
+        section: &str,
+        key: &str,
+        value: &str,
+    ) -> Option<Option<Vec<String>>> {
+        let (section, key) = self.autocase(section, key);
+        match self.map.get_mut(&section) {
+            Some(secmap) => {
+                match secmap.get_mut(&key) {
+                    Some(val) => {
+                        match val {
+                            Some(inner) => {
+                                inner.push(value.to_string());
+                                Some(Some(inner.clone()))
+                            }
+                            None => {
+                                secmap.insert(key, Some(vec![value.to_string()]))
+                            }
+                        }
+                    }
+                    None => {
+                        secmap.insert(key, Some(vec![value.to_string()]))
+                    }
+                }
+            },
+            None => {
+                let mut valmap: Map<String, Option<Vec<String>>> = Map::new();
+                valmap.insert(key, Some(vec![value.to_string()]));
+                self.map.insert(section, valmap);
+                None
+            }
+        }
     }
 
     ///Clears the map, removing all sections and properties from the hashmap. It keeps the allocated memory for reuse.
