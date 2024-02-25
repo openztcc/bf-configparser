@@ -1,12 +1,12 @@
 [package]
-name = "configparser"
-version = "3.0.4"
+name = "bf-configparser"
+version = "1.0.0"
 authors = ["QEDK <qedk.en@gmail.com>"]
 edition = "2021"
-description = "A simple configuration parsing utility with no dependencies that allows you to parse INI and ini-style syntax. You can use this to write Rust programs which can be customized by end users easily."
-homepage = "https://github.com/QEDK/configparser-rs"
-repository = "https://github.com/QEDK/configparser-rs"
-documentation = "https://docs.rs/configparser"
+description = "A simple library for parsing and writing configuration files based on INI like file formats used in Zoo Tycoon (2001)."
+homepage = "https://github.com/openztcc/bf-configparser"
+repository = "https://github.com/openztcc/bf-configparser"
+documentation = ""
 readme = "README.md"
 license = "MIT OR LGPL-3.0-or-later"
 keywords = ["config", "ini", "settings", "configuration", "parser"]
