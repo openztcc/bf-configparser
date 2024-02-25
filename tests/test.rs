@@ -61,25 +61,25 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
         config.get("topsecret", "colon").unwrap(),
         "value after colon"
     );
-    assert!(config.getbool("values", "Bool")?.unwrap());
-    assert!(!config.getboolcoerce("values", "Boolcoerce")?.unwrap());
-    assert_eq!(config.getint("values", "Int")?.unwrap(), -31415);
-    assert_eq!(config.getuint("values", "Uint")?.unwrap(), 31415);
-    assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
-    assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
+    assert!(config.get_parse::<bool>("values", "Bool")?.unwrap());
+    assert!(!config.get_bool_coerce("values", "Boolcoerce")?.unwrap());
+    assert_eq!(config.get_parse::<i64>("values", "Int")?.unwrap(), -31415);
+    assert_eq!(config.get_parse::<u64>("values", "Uint")?.unwrap(), 31415);
+    assert_eq!(config.get_parse::<f64>("values", "Float")?.unwrap(), 3.1415);
+    assert_eq!(config.get_parse::<f64>("topsecret", "None string"), Ok(None));
     assert_eq!(
-        map["default"]["defaultvalues"].clone().unwrap(),
+        map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"
     );
     assert_eq!(
-        map["topsecret"]["kfc"].clone().unwrap(),
+        map["topsecret"]["kfc"].clone().unwrap()[0],
         "the secret herb is orega-"
     );
-    assert_eq!(map["topsecret"]["empty string"].clone().unwrap(), "");
+    assert_eq!(map["topsecret"]["empty string"].clone().unwrap()[0], "");
     assert_eq!(map["topsecret"]["none string"], None);
-    assert_eq!(map["spacing"]["indented"].clone().unwrap(), "indented");
+    assert_eq!(map["spacing"]["indented"].clone().unwrap()[0], "indented");
     assert_eq!(
-        map["spacing"]["not indented"].clone().unwrap(),
+        map["spacing"]["not indented"].clone().unwrap()[0],
         "not indented"
     );
     let mut config2 = config.clone();
@@ -91,10 +91,10 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
     let mut_map = config.get_mut_map();
     mut_map.get_mut("topsecret").unwrap().insert(
         String::from("none string"),
-        Some(String::from("None string")),
+        Some(vec![String::from("None string")]),
     );
     assert_eq!(
-        mut_map["topsecret"]["none string"].clone().unwrap(),
+        mut_map["topsecret"]["none string"].clone().unwrap()[0],
         "None string"
     );
     mut_map.clear();
@@ -124,7 +124,7 @@ fn non_cs() -> Result<(), Box<dyn Error>> {
     assert_eq!(config3.get("topsecret", "KFC").unwrap(), "redacted");
     // spacing -> indented exists in tests/test.ini, but not tests/test_more.ini
     assert_eq!(config3.get("spacing", "indented").unwrap(), "indented");
-    assert!(!config3.getbool("values", "Bool")?.unwrap());
+    assert!(!config3.get_parse::<bool>("values", "Bool")?.unwrap());
 
     Ok(())
 }
@@ -189,25 +189,25 @@ fn cs() -> Result<(), Box<dyn Error>> {
         config.get("topsecret", "colon").unwrap(),
         "value after colon"
     );
-    assert!(config.getbool("values", "Bool")?.unwrap());
-    assert!(!config.getboolcoerce("values", "Boolcoerce")?.unwrap());
-    assert_eq!(config.getint("values", "Int")?.unwrap(), -31415);
-    assert_eq!(config.getuint("values", "Uint")?.unwrap(), 31415);
-    assert_eq!(config.getfloat("values", "Float")?.unwrap(), 3.1415);
-    assert_eq!(config.getfloat("topsecret", "None string"), Ok(None));
+    assert!(config.get_parse::<bool>("values", "Bool")?.unwrap());
+    assert!(!config.get_bool_coerce("values", "Boolcoerce")?.unwrap());
+    assert_eq!(config.get_parse::<i64>("values", "Int")?.unwrap(), -31415);
+    assert_eq!(config.get_parse::<u64>("values", "Uint")?.unwrap(), 31415);
+    assert_eq!(config.get_parse::<f64>("values", "Float")?.unwrap(), 3.1415);
+    assert_eq!(config.get_parse::<f64>("topsecret", "None string"), Ok(None));
     assert_eq!(
-        map["default"]["defaultvalues"].clone().unwrap(),
+        map["default"]["defaultvalues"].clone().unwrap()[0],
         "defaultvalues"
     );
     assert_eq!(
-        map["topsecret"]["KFC"].clone().unwrap(),
+        map["topsecret"]["KFC"].clone().unwrap()[0],
         "the secret herb is orega-"
     );
-    assert_eq!(map["topsecret"]["Empty string"].clone().unwrap(), "");
+    assert_eq!(map["topsecret"]["Empty string"].clone().unwrap()[0], "");
     assert_eq!(map["topsecret"]["None string"], None);
-    assert_eq!(map["spacing"]["indented"].clone().unwrap(), "indented");
+    assert_eq!(map["spacing"]["indented"].clone().unwrap()[0], "indented");
     assert_eq!(
-        map["spacing"]["not indented"].clone().unwrap(),
+        map["spacing"]["not indented"].clone().unwrap()[0],
         "not indented"
     );
     let mut config2 = config.clone();
@@ -219,10 +219,10 @@ fn cs() -> Result<(), Box<dyn Error>> {
     let mut_map = config.get_mut_map();
     mut_map.get_mut("topsecret").unwrap().insert(
         String::from("none string"),
-        Some(String::from("None string")),
+        Some(vec![String::from("None string")]),
     );
     assert_eq!(
-        mut_map["topsecret"]["none string"].clone().unwrap(),
+        mut_map["topsecret"]["none string"].clone().unwrap()[0],
         "None string"
     );
     mut_map.clear();
@@ -547,6 +547,30 @@ Key3=this is a haiku
     spread across separate lines
     a single value
 Key4=Four
+"
+    );
+
+    Ok(())
+}
+
+#[test]
+fn value_array() -> Result<(), Box<dyn Error>> {
+    let mut config = Ini::new_cs();
+    config.set_multiline(true);
+    config.load("tests/test_duplicate_key.ini")?;
+    let vec = config.get_vec("Section", "Name").unwrap();
+    assert_eq!(vec.len(), 4);
+    assert_eq!(vec, vec!["Value1", "Value Two", "Value 3", "Four"]);
+
+    assert_eq!(config.get("Section", "Name").unwrap(), "Four");
+
+    assert_eq!(
+        config.pretty_writes(&WriteOptions::new_with_params(true, 2, 1)),
+        "[Section]
+Name = Value1
+Name = Value Two
+Name = Value 3
+Name = Four
 "
     );
 

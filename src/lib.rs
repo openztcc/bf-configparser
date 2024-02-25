@@ -36,7 +36,7 @@ let mut config = Ini::new();
 config.read(String::from(
   "[somesection]
   someintvalue = 5"));
-let my_value = config.getint("somesection", "someintvalue").unwrap().unwrap();
+let my_value = config.get_parse::<i64>("somesection", "someintvalue").unwrap().unwrap();
 assert_eq!(my_value, 5); // value accessible!
 
 //You can ofcourse just choose to parse the values yourself:
@@ -126,7 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   assert_eq!(config.get("TOPSECRET", "KFC"), None); // as expected!
 
   // What if you want to get an unsigned integer?
-  let my_number = config.getuint("values", "Uint")?.unwrap();
+  let my_number = config.get_parse::<u64>("values", "Uint")?.unwrap();
   assert_eq!(my_number, 31415); // and we got it!
   // The Ini struct provides more getters for primitive datatypes.
 
