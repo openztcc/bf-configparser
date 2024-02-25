@@ -1,5 +1,5 @@
 [package]
-name = "bf-configparser"
+name = "bf_configparser"
 version = "1.0.0"
 authors = ["QEDK <qedk.en@gmail.com>"]
 edition = "2021"
