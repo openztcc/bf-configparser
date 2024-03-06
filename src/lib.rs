@@ -30,7 +30,7 @@ that it's a safe bet that some values need to be parsed in other types. For this
 `getfloat()` and `getbool()`. The only bit of extra magic involved is that the `getbool()` function will treat boolean values case-insensitively (so
 `true` is the same as `True` just like `TRUE`). The crate also provides a stronger `getboolcoerce()` function that parses more values (such as `T`, `yes` and `0`, all case-insensitively), the function's documentation will give you the exact details.
 ```rust
-use configparser::ini::Ini;
+use bf_configparser::ini::Ini;
 
 let mut config = Ini::new();
 config.read(String::from(
@@ -103,7 +103,7 @@ If you read the above sections carefully, you'll know that 1) all the keys are s
 manner and 3) we can use `getint()` to parse the `Int` value into an `i64`. Let's see that in action.
 
 ```rust
-use configparser::ini::{Ini, WriteOptions};
+use bf_configparser::ini::{Ini, WriteOptions};
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {

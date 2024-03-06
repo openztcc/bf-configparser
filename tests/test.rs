@@ -1,4 +1,4 @@
-use configparser::ini::{Ini, WriteOptions};
+use bf_configparser::ini::{Ini, WriteOptions};
 use std::error::Error;
 
 #[test]
@@ -264,7 +264,7 @@ Float=3.1415
 #[test]
 #[cfg(feature = "indexmap")]
 fn pretty_writes_result_is_formatted_correctly() -> Result<(), Box<dyn Error>> {
-    use configparser::ini::IniDefault;
+    use bf_configparser::ini::IniDefault;
 
     const OUT_FILE_CONTENTS: &str = "defaultvalues=defaultvalues
 [topsecret]
@@ -317,7 +317,7 @@ Key3 = another value
 #[cfg(feature = "async-std")]
 #[cfg(feature = "tokio")]
 fn pretty_write_result_is_formatted_correctly() -> Result<(), Box<dyn Error>> {
-    use configparser::ini::IniDefault;
+    use bf_configparser::ini::IniDefault;
 
     const OUT_FILE_CONTENTS: &str = "defaultvalues=defaultvalues
 [topsecret]
@@ -373,7 +373,7 @@ Key3 = another value
 #[cfg(feature = "async-std")]
 #[cfg(feature = "tokio")]
 async fn async_pretty_print_result_is_formatted_correctly() -> Result<(), Box<dyn Error>> {
-    use configparser::ini::IniDefault;
+    use bf_configparser::ini::IniDefault;
 
     const OUT_FILE_CONTENTS: &str = "defaultvalues=defaultvalues
 [topsecret]
@@ -573,6 +573,23 @@ Name = Value 3
 Name = Four
 "
     );
+
+    Ok(())
+}
+
+#[test]
+fn get_keys() -> Result<(), Box<dyn Error>> {
+    let mut config = Ini::new_cs();
+    config.set_multiline(true);
+    config.load("tests/test.ini")?;
+
+
+    let expected_values = vec!["Bool".to_string(), "Boolcoerce".to_string(), "Int".to_string(), "Uint".to_string(), "Float".to_string()];
+
+    let keys = config.get_keys("values").unwrap();
+    for key in keys {
+        assert_eq!(expected_values.contains(&key), true)
+    }
 
     Ok(())
 }

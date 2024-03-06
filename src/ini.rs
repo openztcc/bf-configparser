@@ -26,7 +26,7 @@ use std::str::FromStr;
 ///The `Ini` struct simply contains a nested hashmap of the loaded configuration, the default section header and comment symbols.
 ///## Example
 ///```rust
-///use configparser::ini::Ini;
+///use bf_configparser::ini::Ini;
 ///
 ///let mut config = Ini::new();
 ///```
@@ -47,7 +47,7 @@ pub struct Ini {
 ///default properties from different `Ini` objects.
 ///## Example
 ///```rust
-///use configparser::ini::Ini;
+///use bf_configparser::ini::Ini;
 ///
 ///let mut config = Ini::new();
 ///let default = config.defaults();
@@ -59,7 +59,7 @@ pub struct IniDefault {
     ///Denotes the default section header name.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -69,7 +69,7 @@ pub struct IniDefault {
     ///Denotes the set comment symbols for the object.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -79,7 +79,7 @@ pub struct IniDefault {
     ///Denotes the set delimiters for the key-value pairs.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -90,7 +90,7 @@ pub struct IniDefault {
     ///Denotes if the `Ini` object is case-sensitive.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -100,7 +100,7 @@ pub struct IniDefault {
     ///Denotes if the `Ini` object parses multiline strings.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -165,7 +165,7 @@ pub struct WriteOptions {
     ///Default is `false`.
     ///## Example
     ///```rust
-    ///use configparser::ini::WriteOptions;
+    ///use bf_configparser::ini::WriteOptions;
     ///
     ///let mut write_options = WriteOptions::default();
     ///assert_eq!(write_options.space_around_delimiters, false);
@@ -176,7 +176,7 @@ pub struct WriteOptions {
     ///Default is 4 spaces.
     ///## Example
     ///```rust
-    ///use configparser::ini::WriteOptions;
+    ///use bf_configparser::ini::WriteOptions;
     ///
     ///let mut write_options = WriteOptions::default();
     ///assert_eq!(write_options.multiline_line_indentation, 4);
@@ -187,7 +187,7 @@ pub struct WriteOptions {
     ///Default is 0.
     ///## Example
     ///```rust
-    ///use configparser::ini::WriteOptions;
+    ///use bf_configparser::ini::WriteOptions;
     ///
     ///let mut write_options = WriteOptions::default();
     ///assert_eq!(write_options.blank_lines_between_sections, 0);
@@ -209,7 +209,7 @@ impl WriteOptions {
     ///Creates a new `WriteOptions` object with the default values.
     ///## Example
     ///```rust
-    ///use configparser::ini::WriteOptions;
+    ///use bf_configparser::ini::WriteOptions;
     ///
     ///let write_options = WriteOptions::new();
     ///assert_eq!(write_options.space_around_delimiters, false);
@@ -224,7 +224,7 @@ impl WriteOptions {
     ///Creates a new `WriteOptions` object with the given parameters.
     ///## Example
     ///```rust
-    ///use configparser::ini::WriteOptions;
+    ///use bf_configparser::ini::WriteOptions;
     ///
     ///let write_options = WriteOptions::new_with_params(true, 2, 1);
     ///assert_eq!(write_options.space_around_delimiters, true);
@@ -260,7 +260,7 @@ impl Ini {
     ///
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///```
@@ -273,7 +273,7 @@ impl Ini {
     ///All values in the Map are stored in `String` type.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new_cs();
     ///```
@@ -288,8 +288,8 @@ impl Ini {
     ///Creates a new `Ini` with the given defaults from an existing `IniDefault` object.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
-    ///use configparser::ini::IniDefault;
+    ///use bf_configparser::ini::Ini;
+    ///use bf_configparser::ini::IniDefault;
     ///
     ///let mut default = IniDefault::default();
     ///default.comment_symbols = vec![';'];
@@ -316,7 +316,7 @@ impl Ini {
     ///Fetches the defaults from the current `Ini` object and stores it as a `IniDefault` struct for usage elsewhere.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let default = config.defaults();
@@ -338,8 +338,8 @@ impl Ini {
     ///does not work retroactively, only future operations are affected.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
-    ///use configparser::ini::IniDefault;
+    ///use bf_configparser::ini::Ini;
+    ///use bf_configparser::ini::IniDefault;
     ///
     ///let mut config = Ini::new();
     ///let mut default = IniDefault::default();
@@ -361,7 +361,7 @@ impl Ini {
     ///It must be set before `load()` or `read()` is called in order to take effect.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///
@@ -377,7 +377,7 @@ impl Ini {
     ///Keep in mind that this will remove the default symbols. It must be set before `load()` or `read()` is called in order to take effect.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.set_comment_symbols(&['!', '#']);
@@ -392,7 +392,7 @@ impl Ini {
     ///It must be set before `load()` or `read()` is called in order to take effect.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.set_multiline(true);
@@ -406,7 +406,7 @@ impl Ini {
     ///Gets all the sections of the currently-stored `Map` in a vector.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test.ini");
@@ -421,7 +421,7 @@ impl Ini {
     ///At one time, it only stores one configuration, so each call to `load()` or `read()` will clear the existing `Map`, if present.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let map = config.load("tests/test.ini").unwrap();  // we can get a clone like this, or just store it
@@ -461,7 +461,7 @@ impl Ini {
     ///the existing hashmap, preserving previous values.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test.ini").unwrap();
@@ -511,7 +511,7 @@ impl Ini {
     ///At one time, it only stores one configuration, so each call to `load()` or `read()` will clear the existing `Map`, if present.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let map = match config.read(String::from(
@@ -541,7 +541,7 @@ impl Ini {
     ///values on top of the existing hashmap, preserving previous values.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///if let Err(why) = config.read(String::from(
@@ -586,7 +586,7 @@ impl Ini {
     ///If a file is not present then it is automatically created for you. If a file already exists then it is overwritten.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///fn main() -> std::io::Result<()> {
     ///  let mut config = Ini::new();
@@ -605,7 +605,7 @@ impl Ini {
     ///If a file is not present then it is automatically created for you. If a file already exists then it is overwritten.
     ///## Example
     ///```rust
-    ///use configparser::ini::{Ini, WriteOptions};
+    ///use bf_configparser::ini::{Ini, WriteOptions};
     ///
     ///fn main() -> std::io::Result<()> {
     ///  let mut write_options = WriteOptions::default();
@@ -633,7 +633,7 @@ impl Ini {
     ///This is always safe since the configuration is validated during parsing.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -650,7 +650,7 @@ impl Ini {
     ///This is always safe since the configuration is validated during parsing.
     ///## Example
     ///```rust
-    ///use configparser::ini::{Ini, WriteOptions};
+    ///use bf_configparser::ini::{Ini, WriteOptions};
     ///
     ///let mut write_options = WriteOptions::default();
     ///write_options.space_around_delimiters = true;
@@ -873,7 +873,7 @@ impl Ini {
     ///All `get` functions will do this automatically under the hood.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test.ini");
@@ -892,7 +892,7 @@ impl Ini {
     ///Returns a clone of the stored value vector from the key stored in the defined section.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test_duplicate_key.ini");
@@ -912,7 +912,7 @@ impl Ini {
     ///Similarly it attempts to case-insensitvely find `false`, `no`, `f`, `n`, `0` and `off` to parse it as `False`.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test.ini");
@@ -964,7 +964,7 @@ impl Ini {
     ///Similarly it attempts to case-insensitvely find `false`, `no`, `f`, `n`, `0` and `off` to parse it as `False`.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.load("tests/test_duplicate_key_more.ini");
@@ -1046,7 +1046,7 @@ impl Ini {
     ///Returns a clone of the `Map` stored in our struct.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1068,7 +1068,7 @@ impl Ini {
     ///Returns an immutable reference to the `Map` stored in our struct.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///let mapclone = config.read(String::from
@@ -1086,7 +1086,7 @@ impl Ini {
     ///Returns a mutable reference to the `Map` stored in our struct.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from
@@ -1105,7 +1105,7 @@ impl Ini {
     ///An existing value or values in the map  will be overwritten. You can also set `None` safely.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1144,7 +1144,7 @@ impl Ini {
     ///An existing value or values in the map  will be overwritten. You can also set `None` safely.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1170,7 +1170,7 @@ impl Ini {
     ///An existing vector in the map will be appended to. Passing in None is invalid
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1221,7 +1221,7 @@ impl Ini {
     ///An existing vector in the map will be appended to. Passing in None is invalid
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1271,7 +1271,7 @@ impl Ini {
     ///Clears the map, removing all sections and properties from the hashmap. It keeps the allocated memory for reuse.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1288,7 +1288,7 @@ impl Ini {
     ///Removes a section from the hashmap, returning the properties stored in the section if the section was previously in the map.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1310,7 +1310,7 @@ impl Ini {
     ///Removes a key from a section in the hashmap, returning the value attached to the key if it was previously in the map.
     ///## Example
     ///```rust
-    ///use configparser::ini::Ini;
+    ///use bf_configparser::ini::Ini;
     ///
     ///let mut config = Ini::new();
     ///config.read(String::from(
@@ -1325,6 +1325,34 @@ impl Ini {
     pub fn remove_key(&mut self, section: &str, key: &str) -> Option<Option<Vec<String>>> {
         let (section, key) = self.autocase(section, key);
         self.map.get_mut(&section)?.remove(&key)
+    }
+
+    ///Gets all the keys from a section in the Ini file
+    ///## Example
+    ///```rust
+    ///use bf_configparser::ini::Ini;
+    ///
+    ///let mut config = Ini::new();
+    ///config.read(String::from(
+    ///  "[section]
+    ///  key1=value1
+    ///  key_without_string"));
+    ///let keys = config.get_keys("section").unwrap();
+    ///assert_eq!(keys.contains(&"key1".to_string()), true);
+    ///assert_eq!(keys.contains(&"key_without_string".to_string()), true);
+    ///```
+    ///Returns `Some(Vec<String>)` if the section exists, else `None`.
+    pub fn get_keys(&mut self, section: &str) -> Option<Vec<String>> {
+        match self.map.get(section) {
+            Some(secmap) => {
+                let mut keys = Vec::new();
+                for (key, _) in secmap.iter() {
+                    keys.push(key.clone());
+                }
+                Some(keys)
+            },
+            None => None,
+        }
     }
 }
 
@@ -1433,5 +1461,4 @@ impl Ini {
 ///Private function to check if string contains newlines
 fn is_multiline(line: &String) -> bool {
     line.contains(LINE_ENDING)
-    // line.chars().fold(false, |acc, c| c == '\n' || c == '\r')
 }
