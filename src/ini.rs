@@ -835,14 +835,13 @@ impl Ini {
 
                         let value = trimmed[delimiter + 1..].trim().to_owned();
 
-                        match valmap.entry(key) {
-                            Entry::Vacant(e) => { e.insert(Some(vec![value])); }
-                            Entry::Occupied(mut e) => {
-                                match e.get_mut() {
-                                    Some(x) => { x.push(value); }
-                                    None => { e.insert(Some(vec![value])); }
-                                }
+                        if valmap.contains_key(&key) {
+                            match valmap.get_mut(&key).unwrap() {
+                                Some(x) => { x.push(value); }
+                                None => { valmap.insert(key.clone(), Some(vec![value])); }
                             }
+                        } else {
+                            valmap.insert(key.clone(), Some(vec![value]));
                         }
                     }
                 }
